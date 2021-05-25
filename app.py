@@ -7,7 +7,6 @@ from sqlalchemy import create_engine, func
 
 from flask import Flask, jsonify
 
-
 #################################################
 # Database Setup
 #################################################
@@ -21,6 +20,9 @@ Base.prepare(engine, reflect=True)
 # Save reference to the table
 measurement = Base.classes.measurement
 station = Base.classes.station
+
+# Create our session (link) from Python to the DB
+session = Session(engine)
 
 #################################################
 # Flask Setup
@@ -50,7 +52,7 @@ def precipitation():
     prev_year = dt.date(2017, 8, 23) - dt.timedelta(days=365)
     
     # Query for the date and precipitation for the last year
-    precipitation = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date >= prev_year).all()
+    precipitation = session.query(measurement.date, measurement.prcp).filter(measurement.date >= prev_year).all()
 
     # Dict with date as the key and prcp as the value
     precip = {date: prcp for date, prcp in precipitation}
@@ -59,7 +61,7 @@ def precipitation():
 @app.route("/api/v1.0/stations")
 def stations():
     """Return a list of stations."""
-    results = session.query(Station.station).all()
+    results = session.query(station.station).all()
 
     # Unravel results into a 1D array and convert to a list
     stations = list(np.ravel(results))
@@ -73,7 +75,7 @@ def temp_monthly():
     prev_year = dt.date(2017, 8, 23) - dt.timedelta(days=365)
 
     # Query the primary station for all tobs from the last year
-    results = session.query(Measurement.tobs).\
+    results = session.query(measurement.tobs).\
         filter(measurement.station == 'USC00519281').\
         filter(measurement.date >= prev_year).all()
 
